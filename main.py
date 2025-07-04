@@ -31,7 +31,7 @@ customer_invoice_data = gd.get_template_copy(invoice_dict=data)
 customer_invoice_id = customer_invoice_data["id"]
 
 #TODO 4: Edit the content of the invoice copy
-gdocs = Docs()
+
 #TODO 5: Add the totals to the invoice copy
 
 #TODO 6: Save the order details to Google sheets
