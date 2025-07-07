@@ -196,7 +196,7 @@ Output:
   "description": ["1 x Reception Desk to measure 2,2m L in Supawood and Meranti as per customer’s reference image, with a gloss finish", "1 x  Kitchen cupboards in Supawood and Melamine as per customer’s reference image and spec’s, measuring at 2,6m"],
   "units": [1, 1],
   "price_per_unit": [11500.00, 12500.00],
-  "price_of_item": [11500, 12500]
+  "price_of_item": [11500.00, 12500.00]
 }}
 
 ---
