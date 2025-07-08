@@ -23,8 +23,8 @@ class GoogleStack:
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists("/home/myriad01/PycharmProjects/messing_with_google_docs/google_suite/token.json"):
-      creds = Credentials.from_authorized_user_file("/home/myriad01/PycharmProjects/messing_with_google_docs/google_suite/token.json", SCOPES)
+    if os.path.exists("token.json"):
+      creds = Credentials.from_authorized_user_file("token.json", SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
       if creds and creds.expired and creds.refresh_token:
