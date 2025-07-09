@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from google.genai import Client
+from google.genai.errors import ServerError
 from schemas import ItemRow, DataCheck
 from user_input_exception import UserInputError
 import os
@@ -7,7 +8,9 @@ import os
 load_dotenv()
 
 genai_api_key = os.environ["GENAI_API_KEY"]
+EXIT_SERVER_ERROR = 5
 
+#Gemini prompts for validating data and for extracting/formatting data
 VALIDADTOR_PROMPT_TEMPLATE = f'''You are a data validator, designed to ensure that data complies with a specific schema, and returning certain boolean values based on the data presented. Your task is to parse the data, identify if there are or if there are not any missing elements based on the provided schema, and return a certain values depending on the state of the data. The output should be in a JSON object format.
 
 Here is the strict JSON schema you are to follow:
@@ -109,15 +112,17 @@ The output must follow this JSON schema:
 
 {{
   "customer_name": string,
-  "date": str | null,
-  "vat_inclusive": boolean = True
-  "vat_exclusive": boolean = False
-  "must_show_vat": boolean = True
-  "vat_perc" : integer = 15
+  "date": string | null,
+  "vat_inclusive": boolean = True,
+  "vat_exclusive": boolean = False,
+  "must_show_vat": boolean = True,
+  "vat_perc" : integer = 15,
   "description": list of strings,
   "units": list of integers,
   "price_per_unit": list of floats,
-  "price_of_item": list of floats
+  "price_of_item": list of floats,
+  "deposit": float = 0.00
+  "discount": float = 0.00,
 }}
 
 Here are examples of how to format your output:
@@ -137,13 +142,15 @@ Output:
   "description": ["Wooden Tables", "Chairs"],
   "units": [3, 2],
   "price_per_unit": [100.00, 50.00],
-  "price_of_item": [300.00, 100.00]
+  "price_of_item": [300.00, 100.00],
+  "deposit": 0.00,
+  "discount": 0.00,
 }}
 
 ---
 
 Input:
-"Harry needs five hours of graphic design work at 150 per hour, and two hours for some editing at the same rate. July 1st 2025. Don't show VAT."
+"Harry needs five hours of graphic design work at 150 per hour, and two hours for some editing at the same rate. July 1st 2025. Do not show VAT."
 
 Output:
 {{
@@ -155,7 +162,9 @@ Output:
   "description": ["Graphic Design Work", "Editing"],
   "units": [5, 2],
   "price_per_unit": [150.00, 150.00],
-  "price_of_item": [750, 300]
+  "price_of_item": [750, 300],
+  "deposit": 0.00,
+  "discount": 0.00,
 }}
 
 ---
@@ -173,7 +182,9 @@ Output:
   "description": ["Web Design",],
   "units": [7],
   "price_per_unit": [35.00],
-  "price_of_item": [245.00]
+  "price_of_item": [245.00],
+  "deposit": 0.00,
+  "discount": 0.00,
 }}
 
 ---
@@ -196,13 +207,15 @@ Output:
   "description": ["1 x Reception Desk to measure 2,2m L in Supawood and Meranti as per customer’s reference image, with a gloss finish", "1 x  Kitchen cupboards in Supawood and Melamine as per customer’s reference image and spec’s, measuring at 2,6m"],
   "units": [1, 1],
   "price_per_unit": [11500.00, 12500.00],
-  "price_of_item": [11500.00, 12500.00]
+  "price_of_item": [11500.00, 12500.00],
+  "deposit": 0.00,
+  "discount": 0.00,
 }}
 
 ---
 
 Input:
-"Hey there. I need an invoice for a really big order. It is for a client named 'SupaBoxes'. Please put today's date. Prices are VAT exclusive. And VAT is 16%. Here the details below:
+"Hey there. I need an invoice for a really big order. It is for a client named 'SupaBoxes'. Please put today's date. Prices are VAT exclusive. And VAT is 16%. They paid Here the details below:
 
 Pyjama lounge wooden wall panels behind TV, measuring 1,9m L x 2,05m H. - R4800
 Bedroom 4 wooden wall panels, measuring at 1,2m x 2,2m. - R4050
@@ -210,6 +223,7 @@ Bedroom 5 Half-moon mirror, measuring at 1m L x 800mm W. - R1900
 Main Lounge Sectional Couch in Loomcraft fabric colour 19, measuring at 5,5m x 2,4m. - R26000
 Wall molding. 15m @ R400/m, with R100 installation fee per meter."
 
+They paid a R22125 deposit.
 
 Output:
 {{
@@ -221,13 +235,15 @@ Output:
   "description": ["Pyjama lounge wooden wall panels behind TV, measuring 1,9m L x 2,05m H", "Bedroom 4 wooden wall panels, measuring at 1,2m x 2,2m", "Bedroom 5 Half-moon mirror, measuring at 1m L x 800mm W", "Main Lounge Sectional Couch in Loomcraft fabric colour 19, measruing at 5,5m x 2,4m", "Wall molding. 15m @ R400/m, with R100 installation fee per meter."],
   "units": [1, 1, 1, 1, 15],
   "price_per_unit": [4800.00, 4050.00, 1900, 26000, 500],
-  "price_of_item": [4800.00, 4050.00, 1900.00, 26000,00, 7500.00]
+  "price_of_item": [4800.00, 4050.00, 1900.00, 26000,00, 7500.00],
+  "deposit": 22125.00,
+  "discount": 0.00,
 }}
 
 ---
 
 Input:
-"Charge Jane: 4x private math tutoring @ $90. No VAT. Oct, 15 25."
+"Charge Jane: 4x private math tutoring @ $90. No VAT. Oct, 15 25. 5% discount."
 
 Output:
 {{
@@ -239,7 +255,9 @@ Output:
   "description": ["Private Math Tutoring"],
   "units": [4],
   "price_per_unit": [90.00],
-  "price_of_item": [360.00]
+  "price_of_item": [360.00],
+  "deposit": 0.00,
+  "discount": 5.00,
 }}
 
 Now, process the following input:
@@ -250,10 +268,10 @@ class InvoiceLLM:
         self.model = "gemini-2.0-flash"
         self.client = Client(api_key=genai_api_key)
 
+    #Uses LLM to validate data and return error object if erroneous
     def validate_data(self, data):
         missing_elements = []
 
-        #Todo: Catch infrequent 503 error and resolve
         data_input = self.client.models.generate_content(
             model=self.model,
             contents=VALIDADTOR_PROMPT_TEMPLATE + data,
@@ -275,18 +293,24 @@ class InvoiceLLM:
             return data
 
     def arrange_data(self, user_input):
-        valid_input = self.validate_data(data=user_input)
+        try:
+            valid_input = self.validate_data(data=user_input)
+        except ServerError:
+            return ServerError
 
         if isinstance(valid_input, UserInputError):
             return valid_input
+        try:
+            data = self.client.models.generate_content(
+                model=self.model,
+                contents=INVOICE_PROMPT_TEMPLATE + valid_input,
+                config={
+                    "response_mime_type": "application/json",
+                    "response_schema": ItemRow,
+                }
+            )
+        except ServerError:
+            return ServerError
 
-        data = self.client.models.generate_content(
-            model=self.model,
-            contents=INVOICE_PROMPT_TEMPLATE + valid_input,
-            config={
-                "response_mime_type": "application/json",
-                "response_schema": ItemRow,
-            }
-        )
         response = data.parsed
         return response.model_dump()

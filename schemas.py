@@ -16,3 +16,5 @@ class ItemRow(BaseModel):
     units : list[int]
     price_per_unit : list[float]
     price_of_item : list[float]
+    deposit : float
+    discount : float
