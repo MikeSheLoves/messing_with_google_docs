@@ -123,6 +123,7 @@ The output must follow this JSON schema:
   "price_of_item": list of floats,
   "deposit": float = 0.00
   "discount": float = 0.00,
+  "document_type": string = "Invoice",
 }}
 
 Here are examples of how to format your output:
@@ -130,7 +131,7 @@ Here are examples of how to format your output:
 ---
 
 Input:
-"I need an invoice for John Smith for 3 wooden tables at $100 each and 2 chairs at $50 each. Date is 30 June 2025."
+"I need a quotation for John Smith for 3 wooden tables at $100 each and 2 chairs at $50 each. Date is 30 June 2025."
 
 Output:
 {{
@@ -139,12 +140,13 @@ Output:
   "vat_inclusive": True,
   "must_show_vat": True,
   "vat_perc" : 15,
-  "description": ["Wooden Tables", "Chairs"],
+  "description": ["Wooden Tables.", "Chairs."],
   "units": [3, 2],
   "price_per_unit": [100.00, 50.00],
   "price_of_item": [300.00, 100.00],
   "deposit": 0.00,
   "discount": 0.00,
+  "document_type": "Quotation",
 }}
 
 ---
@@ -159,12 +161,13 @@ Output:
   "vat_inclusive": True,
   "must_show_vat": False,
   "vat_perc" : 15,
-  "description": ["Graphic Design Work", "Editing"],
+  "description": ["Graphic Design Work.", "Editing."],
   "units": [5, 2],
   "price_per_unit": [150.00, 150.00],
   "price_of_item": [750, 300],
   "deposit": 0.00,
   "discount": 0.00,
+  "document_type": "Invoice",
 }}
 
 ---
@@ -179,12 +182,13 @@ Output:
   "vat_inclusive": False,
   "must_show_vat": True,
   "vat_perc" : 15,
-  "description": ["Web Design",],
+  "description": ["Web Design."],
   "units": [7],
   "price_per_unit": [35.00],
   "price_of_item": [245.00],
   "deposit": 0.00,
   "discount": 0.00,
+  "document_type": "Invoice",
 }}
 
 ---
@@ -204,12 +208,13 @@ Output:
   "vat_inclusive": False,
   "must_show_vat": True,
   "vat_perc" : 15,
-  "description": ["1 x Reception Desk to measure 2,2m L in Supawood and Meranti as per customer’s reference image, with a gloss finish", "1 x  Kitchen cupboards in Supawood and Melamine as per customer’s reference image and spec’s, measuring at 2,6m"],
+  "description": ["1 x Reception Desk to measure 2,2m L in Supawood and Meranti as per customer’s reference image, with a gloss finish.", "1 x  Kitchen cupboards in Supawood and Melamine as per customer’s reference image and spec’s, measuring at 2,6m."],
   "units": [1, 1],
   "price_per_unit": [11500.00, 12500.00],
   "price_of_item": [11500.00, 12500.00],
   "deposit": 0.00,
   "discount": 0.00,
+  "document_type": "Quotation",
 }}
 
 ---
@@ -232,12 +237,13 @@ Output:
   "vat_inclusive": False,
   "must_show_vat": True,
   "vat_perc" : 16,
-  "description": ["Pyjama lounge wooden wall panels behind TV, measuring 1,9m L x 2,05m H", "Bedroom 4 wooden wall panels, measuring at 1,2m x 2,2m", "Bedroom 5 Half-moon mirror, measuring at 1m L x 800mm W", "Main Lounge Sectional Couch in Loomcraft fabric colour 19, measruing at 5,5m x 2,4m", "Wall molding. 15m @ R400/m, with R100 installation fee per meter."],
+  "description": ["Pyjama lounge wooden wall panels behind TV, measuring 1,9m L x 2,05m H", "Bedroom 4 wooden wall panels, measuring at 1,2m x 2,2m.", "Bedroom 5 Half-moon mirror, measuring at 1m L x 800mm W.", "Main Lounge Sectional Couch in Loomcraft fabric colour 19, measruing at 5,5m x 2,4m.", "Wall molding. 15m @ R400/m, with R100 installation fee per meter."],
   "units": [1, 1, 1, 1, 15],
   "price_per_unit": [4800.00, 4050.00, 1900, 26000, 500],
   "price_of_item": [4800.00, 4050.00, 1900.00, 26000,00, 7500.00],
   "deposit": 22125.00,
   "discount": 0.00,
+  "document_type": "Invoice",
 }}
 
 ---
@@ -252,12 +258,13 @@ Output:
   "vat_inclusive": True,
   "must_show_vat": False,
   "vat_perc" : 15,
-  "description": ["Private Math Tutoring"],
+  "description": ["Private Math Tutoring."],
   "units": [4],
   "price_per_unit": [90.00],
   "price_of_item": [360.00],
   "deposit": 0.00,
   "discount": 5.00,
+  "document_type": "Invoice",
 }}
 
 Now, process the following input:

@@ -62,7 +62,7 @@ gdr = Drive(data=data)
 invoice_num = gdr.create_invoice_num()
 
 #Acquire the unique documentId for the Google Docs API
-customer_invoice_data = gdr.get_template_copy(invoice_dict=data)
+customer_invoice_data = gdr.get_template_copy()
 customer_invoice_id = customer_invoice_data["id"]
 
 #Adds VAT to pricing if user indicated that prices are not VAT inclusive

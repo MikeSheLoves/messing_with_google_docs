@@ -11,17 +11,13 @@ class Drive(GoogleStack):
         self.drive_service = self.build_drive_service()
         self.data = data
         self.invoice_num = ""
+        self.document_type = self.data["document_type"]
 
     def get_file_id(self):
-        if os.environ["TEMPLATE_FILE_ID"]:
-            return os.environ["TEMPLATE_FILE_ID"]
-
-        drive_dict = self.drive_service.files().list().execute()
-        files_list = drive_dict["files"]
-        for item in files_list:
-            if item["name"] == "Invoice Template":
-                file_id = item["id"]
-        return file_id
+        if self.data["document_type"] == "invoice":
+            return os.environ["INVOICE_TEMPLATE_FILE_ID"]
+        else:
+            return os.environ["QUOTATION_TEMPLATE_FILE_ID"]
 
     def create_invoice_num(self):
         short_date = f"{self.data["date"][2:]}"
@@ -29,10 +25,10 @@ class Drive(GoogleStack):
         self.invoice_num = invoice_num
         return invoice_num
 
-    def get_template_copy(self, invoice_dict):
+    def get_template_copy(self):
         file_id = self.get_file_id()
-        invoice_title = f"Invoice {self.invoice_num} for {invoice_dict["customer_name"]} ({invoice_dict["date"]})"
+        document_title = f"{self.data["document_type"]} {self.invoice_num} for {self.data["customer_name"]} ({self.data["date"]})"
         request_body = {
-            "name": invoice_title,
+            "name": document_title,
         }
         return self.drive_service.files().copy(fileId=file_id, body=request_body).execute()

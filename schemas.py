@@ -18,3 +18,4 @@ class ItemRow(BaseModel):
     price_of_item : list[float]
     deposit : float
     discount : float
+    document_type : str = "Invoice"
