@@ -1,6 +1,4 @@
 import os.path, streamlit as st
-import json
-
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -9,6 +7,22 @@ from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/documents", "https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/spreadsheets"]
+
+from google_auth_oauthlib.flow import InstalledAppFlow
+
+def run_manual_console_oauth(flow):
+    auth_url, _ = flow.authorization_url(prompt='consent')
+    print("Please go to this URL and authorize the app:", auth_url)
+
+    # Use Streamlit text input to collect the code
+    auth_code = st.text_input("Paste the authorization code here:")
+
+    if auth_code:
+        flow.fetch_token(code=auth_code)
+        return flow.credentials
+
+    return None
+
 
 class GoogleStack:
   def __init__(self):
@@ -27,17 +41,25 @@ class GoogleStack:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            # Build the credentials dict from st.secrets
-            creds_dict = {
-                "installed": dict(st.secrets["installed"])
-            }
-
+            creds_dict = {"installed": dict(st.secrets["installed"])}
             flow = InstalledAppFlow.from_client_config(creds_dict, SCOPES)
-            creds = flow.run_local_server(port=0)
+            auth_url, _ = flow.authorization_url(prompt='consent')
 
-        # Save token locally (Streamlit Cloud won’t persist this)
-        with open("token.json", "w") as token:
-            token.write(creds.to_json())
+            st.markdown("### Step 1: Authorize")
+            st.markdown(f"[Click here to authorize access]({auth_url})")
+
+            auth_code = st.text_input("Step 2: Paste the authorization code below:")
+
+            if auth_code:
+                flow.fetch_token(code=auth_code)
+                creds = flow.credentials
+                st.success("✅ Authentication complete!")
+
+                # Optional: Save to file (will not persist on Streamlit Cloud)
+                with open("token.json", "w") as token:
+                    token.write(creds.to_json())
+            else:
+                st.stop()  # Stop app until auth code is entered
 
     return creds
 
