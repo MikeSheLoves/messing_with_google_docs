@@ -5,10 +5,9 @@ from schemas import ItemRow, DataCheck
 from user_input_exception import UserInputError
 import os
 
-load_dotenv()
+load_dotenv(dotenv_path=".venv/.env")
 
 genai_api_key = os.environ["GENAI_API_KEY"]
-EXIT_SERVER_ERROR = 5
 
 #Gemini prompts for validating data and for extracting/formatting data
 VALIDADTOR_PROMPT_TEMPLATE = f'''You are a data validator, designed to ensure that data complies with a specific schema, and returning certain boolean values based on the data presented. Your task is to parse the data, identify if there are or if there are not any missing elements based on the provided schema, and return a certain values depending on the state of the data. The output should be in a JSON object format.
@@ -295,7 +294,7 @@ class InvoiceLLM:
                 missing_elements.append(key)
 
         if missing_elements:
-            return UserInputError(user_input=data, misc_elements=missing_elements)
+            return UserInputError(misc_elements=missing_elements)
         else:
             return data
 
