@@ -13,40 +13,44 @@ class GoogleStack:
     self.creds = self.google_authenticate()
 
 
-  def google_authenticate(self):
-    creds = None
+  import streamlit as st
+import google.auth.transport.requests
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+import os
+import requests
 
-    # Handle token.json if it exists
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+SCOPES = ["https://www.googleapis.com/auth/documents", "https://www.googleapis.com/auth/drive"]
 
-    # If no (valid) credentials, go through flow
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            creds_dict = {"installed": dict(st.secrets["installed"])}
-            flow = InstalledAppFlow.from_client_config(creds_dict, SCOPES)
-            flow.redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
-            auth_url, _ = flow.authorization_url(prompt='consent')
+def google_authenticate():
+    # Load credentials from Streamlit secrets
+    creds_dict = {"web": dict(st.secrets["web"])}
 
-            st.markdown("### Step 1: Authorize")
-            st.markdown(f"[Click here to authorize access]({auth_url})")
+    # Streamlit-specific URL (your deployed Cloud Run URL)
+    redirect_uri = st.secrets["web"]["redirect_uris"][0]
+    flow = Flow.from_client_config(
+        creds_dict,
+        scopes=SCOPES,
+        redirect_uri=redirect_uri
+    )
 
-            auth_code = st.text_input("Step 2: Paste the authorization code below:")
+    # Handle authorization callback
+    query_params = st.experimental_get_query_params()
+    if "code" in query_params:
+        auth_code = query_params["code"][0]
+        flow.fetch_token(code=auth_code)
+        creds = flow.credentials
+        st.session_state["google_creds"] = creds
+        st.success("✅ Authenticated with Google successfully!")
+        return creds
 
-            if auth_code:
-                flow.fetch_token(code=auth_code)
-                creds = flow.credentials
-                st.success("✅ Authentication complete!")
+    # If not authorized, redirect to Google's auth page
+    if "google_creds" not in st.session_state:
+        auth_url, _ = flow.authorization_url(prompt="consent", access_type="offline", include_granted_scopes="true")
+        st.markdown(f"🔐 [Click here to authenticate with Google Docs]({auth_url})")
+        st.stop()
 
-                # Optional: Save to file (will not persist on Streamlit Cloud)
-                with open("token.json", "w") as token:
-                    token.write(creds.to_json())
-            else:
-                st.stop()  # Stop app until auth code is entered
-
-    return creds
+    return st.session_state["google_creds"]
 
   def build_docs_service(self):
     try:
