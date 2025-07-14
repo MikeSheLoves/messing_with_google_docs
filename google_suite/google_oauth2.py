@@ -6,23 +6,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/documents", "https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/spreadsheets"]
-
-from google_auth_oauthlib.flow import InstalledAppFlow
-
-def run_manual_console_oauth(flow):
-    auth_url, _ = flow.authorization_url(prompt='consent')
-    print("Please go to this URL and authorize the app:", auth_url)
-
-    # Use Streamlit text input to collect the code
-    auth_code = st.text_input("Paste the authorization code here:")
-
-    if auth_code:
-        flow.fetch_token(code=auth_code)
-        return flow.credentials
-
-    return None
-
+SCOPES = ["https://www.googleapis.com/auth/documents", "https://www.googleapis.com/auth/drive"]
 
 class GoogleStack:
   def __init__(self):
@@ -43,6 +27,7 @@ class GoogleStack:
         else:
             creds_dict = {"installed": dict(st.secrets["installed"])}
             flow = InstalledAppFlow.from_client_config(creds_dict, SCOPES)
+            flow.redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
             auth_url, _ = flow.authorization_url(prompt='consent')
 
             st.markdown("### Step 1: Authorize")
